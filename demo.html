@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="pt-BR" style="color-scheme: dark;" data-mode="dark" data-color="ocean-blue">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000" />
+  <title>Sincroniza - Automação de Identidades de RH</title>
+  <meta name="description" content="Sincronização inteligente entre sistemas de RH e provedores de identidade. Automatize o ciclo de vida de contas no Active Directory e Entra ID." />
+  <meta property="og:locale" content="pt_BR" />
+
+  <!-- Barlow (body text) + Pattanakarn (logotype) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Pattanakarn:wght@600&display=swap" rel="stylesheet" />
+
+  <!-- Apply saved theme before paint to prevent flash -->
+  <script>
+    (function(){
+      var m=localStorage.getItem('sincroniza-mode');
+      var c=localStorage.getItem('sincroniza-color');
+      var el=document.documentElement;
+      if(m){el.setAttribute('data-mode',m);el.style.colorScheme=m;}
+      if(c)el.setAttribute('data-color',c);
+    })();
+  </script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React 18 UMD -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Babel standalone for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* === Base dark/light structure (color-theme neutral) === */
+    :root {
+      --bg: #000000;
+      --fg: #e2e6ea;
+      --card: #161922;
+      --card-fg: #d6d6d6;
+      --muted: #2b2b2b;
+      --muted-fg: #6b7688;
+      --accent: #1a2538;
+      --primary: #4b7cf5;
+      --primary-fg: #ffffff;
+      --border: #222a34;
+      --input: #1c2c42;
+      --ring: #4d90f7;
+      --destructive: #e03e3e;
+      --radius: 1.3rem;
+      --logo-text: #fff;
+      --nav-pill-bg: rgba(0,0,0,0.7);
+      --btn-gradient: none;
+      /* Form card — inverted (white on dark) */
+      --form-bg: #ffffff;
+      --form-fg: #111827;
+      --form-muted: #6b7280;
+      --form-input-bg: #f1f3f7;
+      --form-input-border: #e2e5eb;
+      --form-input-fg: #111827;
+      --form-input-focus: var(--primary);
+    }
+    [data-mode="light"] {
+      --bg: #f1f3f7;
+      --fg: #111827;
+      --card: #ffffff;
+      --card-fg: #374151;
+      --muted: #e6e9ef;
+      --muted-fg: #6b7280;
+      --accent: #e8ecf4;
+      --border: #e2e5eb;
+      --input: #d1d8e4;
+      --destructive: #dc2626;
+      --logo-text: #111827;
+      --nav-pill-bg: rgba(255,255,255,0.8);
+      /* Form card — inverted (dark on light) */
+      --form-bg: #111827;
+      --form-fg: #f1f3f7;
+      --form-muted: #9ca3af;
+      --form-input-bg: #1f2937;
+      --form-input-border: #374151;
+      --form-input-fg: #f1f3f7;
+      --form-input-focus: var(--primary);
+    }
+
+    /* === Color themes — override --primary, --ring, --accent (dark tint) === */
+    /* Ocean Blue (default) */
+    [data-color="ocean-blue"] { --primary:#4b7cf5; --ring:#4d90f7; }
+    [data-color="ocean-blue"][data-mode="light"] { --primary:#3b68d9; --ring:#3b68d9; --accent:#e8ecf4; }
+
+    /* Violet */
+    [data-color="violet"] { --primary:#8a08fd; --ring:#a040ff; --accent:#2a1845; }
+    [data-color="violet"][data-mode="light"] { --primary:#7b07e0; --ring:#7b07e0; --accent:#f0e8fc; }
+
+    /* Teal */
+    [data-color="teal"] { --primary:#14b8a6; --ring:#2dd4bf; --accent:#0f2f2b; }
+    [data-color="teal"][data-mode="light"] { --primary:#0f9d8e; --ring:#0f9d8e; --accent:#e4f5f2; }
+
+    /* Emerald */
+    [data-color="emerald"] { --primary:#10b981; --ring:#34d399; --accent:#0f2f1f; }
+    [data-color="emerald"][data-mode="light"] { --primary:#0d9e6e; --ring:#0d9e6e; --accent:#e4f5ec; }
+
+    /* Indigo */
+    [data-color="indigo"] { --primary:#6366f1; --ring:#818cf8; --accent:#1e1f45; }
+    [data-color="indigo"][data-mode="light"] { --primary:#5558d9; --ring:#5558d9; --accent:#ecedf8; }
+
+    /* Rose */
+    [data-color="rose"] { --primary:#f43f5e; --ring:#fb7185; --accent:#3d1520; }
+    [data-color="rose"][data-mode="light"] { --primary:#d9374f; --ring:#d9374f; --accent:#fce8ec; }
+
+    /* Amber */
+    [data-color="amber"] { --primary:#f59e0b; --ring:#fbbf24; --accent:#3d2e0f; --primary-fg:#111827; }
+    [data-color="amber"][data-mode="light"] { --primary:#d98b0a; --ring:#d98b0a; --accent:#fdf3e0; --primary-fg:#111827; }
+
+    /* Gradient: Blue → Violet */
+    [data-color="grad-blue-violet"] { --primary:#6366f1; --ring:#818cf8; --accent:#1e1f45; --btn-gradient:linear-gradient(135deg,#4b7cf5,#8a08fd); }
+    [data-color="grad-blue-violet"][data-mode="light"] { --primary:#5558d9; --ring:#5558d9; --accent:#ecedf8; --btn-gradient:linear-gradient(135deg,#3b68d9,#7b07e0); }
+
+    /* Gradient: Teal → Blue */
+    [data-color="grad-teal-blue"] { --primary:#14b8a6; --ring:#2dd4bf; --accent:#0f2f2b; --btn-gradient:linear-gradient(135deg,#14b8a6,#4b7cf5); }
+    [data-color="grad-teal-blue"][data-mode="light"] { --primary:#0f9d8e; --ring:#0f9d8e; --accent:#e4f5f2; --btn-gradient:linear-gradient(135deg,#0f9d8e,#3b68d9); }
+
+    /* Gradient: Violet → Rose */
+    [data-color="grad-violet-rose"] { --primary:#8a08fd; --ring:#a040ff; --accent:#2a1845; --btn-gradient:linear-gradient(135deg,#8a08fd,#f43f5e); }
+    [data-color="grad-violet-rose"][data-mode="light"] { --primary:#7b07e0; --ring:#7b07e0; --accent:#f0e8fc; --btn-gradient:linear-gradient(135deg,#7b07e0,#d9374f); }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: var(--bg);
+      transition: background-color 0.3s;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--card-fg);
+      font-family: 'Barlow', system-ui, -apple-system, sans-serif;
+      font-weight: 400;
+      font-size: 18px;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* --- Headings --- */
+    h1, h2, h3, h4 {
+      text-wrap: balance;
+    }
+
+    /* --- Skip Link --- */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 0;
+      z-index: 100;
+      padding: 0.75rem 1.5rem;
+      background-color: var(--primary);
+      color: var(--primary-fg);
+      font-weight: 600;
+      border-radius: 0 0 0.75rem 0;
+      transition: top 0.2s;
+      text-decoration: none;
+    }
+    .skip-link:focus {
+      top: 0;
+    }
+
+    /* --- Focus Visible --- */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+
+    /* --- Touch --- */
+    a, button, input, select, textarea {
+      touch-action: manipulation;
+    }
+
+    /* --- Nav (only place blur is used) --- */
+    .nav-glass {
+      background-color: oklch(0 0 0 / 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    [data-mode="light"] .nav-glass {
+      background-color: rgba(241, 243, 247, 0.85);
+    }
+    .nav-glass-drawer {
+      background-color: var(--card);
+    }
+
+    /* --- Buttons (flat, no gradient — matches shadcn) --- */
+    .btn-primary {
+      background: var(--btn-gradient, var(--primary));
+      background-color: var(--primary);
+      color: var(--primary-fg);
+      transition: filter 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      border: none;
+      font-family: 'Barlow', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+    .btn-primary:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+      filter: none;
+    }
+    .btn-secondary {
+      background-color: transparent;
+      border: 1px solid var(--border);
+      color: var(--card-fg);
+      transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: 'Barlow', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-secondary:hover {
+      background-color: var(--accent);
+      border-color: var(--input);
+    }
+
+    /* --- Card transitions (replaces transition-all) --- */
+    .card-transition {
+      transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* --- Stat numbers --- */
+    .stat-number {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* --- Premium Card: 3D tilt + border trace + glow --- */
+    .premium-card {
+      position: relative;
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+      transform-style: preserve-3d;
+      perspective: 1000px;
+    }
+    .premium-card:hover {
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 60px color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+
+    /* Inner glow following mouse */
+    .premium-card .card-glow {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .premium-card:hover .card-glow { opacity: 1; }
+
+    /* Mouse-following border glow */
+    .premium-card .border-trace {
+      position: absolute;
+      top: -1px; left: -1px; right: -1px; bottom: -1px;
+      border-radius: var(--radius);
+      pointer-events: none;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      padding: 1.5px;
+      background: radial-gradient(400px circle at var(--border-x, 50%) var(--border-y, 50%), var(--primary), transparent 40%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+    .premium-card:hover .border-trace { opacity: 1; }
+
+    [data-mode="light"] .premium-card {
+      background: var(--card);
+      border-color: #d1d5db;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    [data-mode="light"] .premium-card:hover {
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1), 0 0 40px color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+    .section-card-bg .premium-card {
+      background: var(--bg);
+    }
+    [data-mode="light"] .section-card-bg .premium-card {
+      background: var(--bg);
+      border-color: #c9cdd5;
+    }
+
+    /* --- Cinematic Scroll Reveal (Blur + Scale) --- */
+    .reveal-cinematic {
+      opacity: 0;
+      filter: blur(10px);
+      transform: translateY(32px) scale(0.97);
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal-cinematic.visible {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0) scale(1);
+    }
+
+    /* --- Spotlight Card (Vercel/Linear style mouse glow) --- */
+    .spotlight-card {
+      position: relative;
+      background: var(--card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      transition: border-color 0.3s ease;
+    }
+    .spotlight-card::before, .spotlight-card::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+    .spotlight-card::before {
+      padding: 1px;
+      border-radius: var(--radius);
+      background: radial-gradient(600px circle at var(--mouse-x, 0) var(--mouse-y, 0), rgba(255,255,255,0.25), transparent 40%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      z-index: 2;
+    }
+    .spotlight-card::after {
+      background: radial-gradient(600px circle at var(--mouse-x, 0) var(--mouse-y, 0), var(--primary-glow, rgba(255,255,255,0.04)), transparent 40%);
+      z-index: 1;
+    }
+    .spotlight-card:hover::before, .spotlight-card:hover::after {
+      opacity: 1;
+    }
+
+    /* --- Text Shine --- */
+    .text-shine {
+      background: linear-gradient(to right, var(--fg) 20%, var(--muted-fg) 40%, var(--muted-fg) 60%, var(--fg) 80%);
+      background-size: 200% auto;
+      color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: shineText 6s linear infinite;
+    }
+    @keyframes shineText { to { background-position: 200% center; } }
+
+    /* --- Button Shine --- */
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -150%; width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      transform: skewX(-20deg);
+      animation: shineBtn 4s infinite;
+      z-index: 0;
+    }
+    .btn-primary { position: relative; overflow: hidden; isolation: isolate; }
+    @keyframes shineBtn { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+
+    /* --- Float animation --- */
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    .animate-float { animation: float 8s ease-in-out infinite; }
+
+    /* --- Pulse down (timeline energy) --- */
+    @keyframes pulseDown {
+      0% { top: -10%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { top: 110%; opacity: 0; }
+    }
+    .animate-pulse-down { animation: pulseDown 4s linear infinite; }
+
+    /* --- Path draw (SVG line animations) --- */
+    .path-draw {
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: drawLine 4s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+    }
+    .path-draw-reverse {
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: drawLine 4s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate-reverse;
+    }
+    @keyframes drawLine { to { stroke-dashoffset: 0; } }
+
+    /* --- Dot pulse (scattered event dots) --- */
+    @keyframes dotPulse {
+      0%, 100% { opacity: var(--dot-base, 0.1); transform: scale(1); }
+      50% { opacity: calc(var(--dot-base, 0.1) + 0.15); transform: scale(1.8); }
+    }
+
+    /* --- Slow spin --- */
+    @keyframes spinSlow { 100% { transform: rotate(360deg); } }
+    .animate-spin-slow { animation: spinSlow 15s linear infinite; }
+    .animate-spin-slow-reverse { animation: spinSlow 8s linear infinite reverse; }
+
+    /* --- 3D Perspective Grid (hero only — blue-tinted to match primary) --- */
+    .perspective-grid {
+      position: absolute;
+      bottom: 0; left: 0; width: 100%; height: 150%;
+      background-image:
+        linear-gradient(to right, oklch(0.35 0.02 245 / 0.12) 1px, transparent 1px),
+        linear-gradient(to top, oklch(0.35 0.02 245 / 0.12) 1px, transparent 1px);
+      background-size: 50px 50px;
+      transform: perspective(600px) rotateX(70deg) translateY(100px) translateZ(-200px);
+      transform-origin: bottom center;
+      animation: gridMove 20s linear infinite;
+      pointer-events: none;
+      mask-image: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 60%);
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 60%);
+    }
+
+    /* --- Keyframes --- */
+    @keyframes gridMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 50px; }
+    }
+    @keyframes flowDot {
+      0% { left: 0%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { left: 100%; opacity: 0; }
+    }
+    .animate-flow-dot {
+      animation: flowDot 2.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes pulseSubtle {
+      0%, 100% { box-shadow: 0 0 12px oklch(0.67 0.16 245 / 0.15); }
+      50% { box-shadow: 0 0 20px oklch(0.67 0.16 245 / 0.35); }
+    }
+    .animate-pulse-subtle {
+      animation: pulseSubtle 3s infinite ease-in-out;
+    }
+    /* Event storm: pop-in, hold, fade-out pills around the HR node */
+    @keyframes eventPop {
+      0% { opacity:0; transform:scale(0.8); }
+      6% { opacity:1; transform:scale(1); }
+      35% { opacity:1; transform:scale(1); }
+      45% { opacity:0; transform:scale(0.9); }
+      100% { opacity:0; transform:scale(0.9); }
+    }
+
+    /* --- Accordion --- */
+    .accordion-content {
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-out;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+    .accordion-content.open {
+      max-height: 500px;
+      opacity: 1;
+    }
+
+    /* --- Elevations (zero-shadow default matching app; used only on hero viz) --- */
+    .elevation-hero { box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+
+    /* --- Light theme adjustments --- */
+    [data-mode="light"] .perspective-grid {
+      background-image:
+        linear-gradient(to right, oklch(0.55 0.02 245 / 0.15) 1px, transparent 1px),
+        linear-gradient(to top, oklch(0.55 0.02 245 / 0.15) 1px, transparent 1px);
+    }
+    [data-mode="light"] .elevation-hero {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+    [data-mode="light"] .spotlight-card {
+      background: var(--card);
+      border-color: #d1d5db;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    /* Cards on --card background sections need contrasting background */
+    .section-card-bg .spotlight-card {
+      background: var(--bg);
+    }
+    [data-mode="light"] .section-card-bg .spotlight-card {
+      border-color: #d1d5db;
+    }
+    [data-mode="light"] .elevation-hero {
+      border-color: #d1d5db;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    [data-mode="light"] .btn-primary:hover {
+      filter: brightness(0.92);
+    }
+    body, * {
+      transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    }
+
+    /* --- Reduced Motion --- */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      html { scroll-behavior: auto; }
+      .fade-in-up { opacity: 1; transform: none; }
+      .perspective-grid { animation: none; }
+    }
+
+    /* --- Spinner (form submit) --- */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+
+    /* --- Hero logo slow rotation --- */
+    @keyframes logoSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .logo-spin {
+      animation: logoSpin 4s linear infinite;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // ─── Inline SVG Icon Components ───
+    const iconDefaults = { viewBox:"0 0 24 24", fill:"none", stroke:"currentColor", strokeWidth:2, strokeLinecap:"round", strokeLinejoin:"round" };
+    const Icon = ({ paths, size=24, className="", style={} }) => (
+      <svg width={size} height={size} className={className} style={style} {...iconDefaults} aria-hidden="true">
+        {paths.map((d,i) => <path key={i} d={d}/>)}
+      </svg>
+    );
+
+    const MenuIcon = (p) => <Icon {...p} paths={["M4 12h16","M4 6h16","M4 18h16"]}/>;
+    const XIcon = (p) => <Icon {...p} paths={["M18 6L6 18","M6 6l12 12"]}/>;
+    const ChevronDown = (p) => <Icon {...p} paths={["M6 9l6 6 6-6"]}/>;
+    const Check = (p) => <Icon {...p} paths={["M20 6L9 17l-5-5"]}/>;
+    const ArrowRight = (p) => <Icon {...p} paths={["M5 12h14","M12 5l7 7-7 7"]}/>;
+    const ShieldCheck = (p) => <Icon {...p} paths={["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z","M9 12l2 2 4-4"]}/>;
+    const UserCog = (p) => <Icon {...p} paths={["M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2","M9 3a4 4 0 100 8 4 4 0 000-8z","M19.4 14.8a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51"]}/>;
+    const Activity = (p) => <Icon {...p} paths={["M22 12h-4l-3 9L9 3l-3 9H2"]}/>;
+    const Layers = (p) => <Icon {...p} paths={["M12 2L2 7l10 5 10-5-10-5z","M2 17l10 5 10-5","M2 12l10 5 10-5"]}/>;
+    const FileText = (p) => <Icon {...p} paths={["M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z","M14 2v6h6","M16 13H8","M16 17H8","M10 9H8"]}/>;
+    const RefreshCw = (p) => <Icon {...p} paths={["M23 4v6h-6","M1 20v-6h6","M3.51 9a9 9 0 0114.85-3.36L23 10","M1 14l4.64 4.36A9 9 0 0020.49 15"]}/>;
+    const Lock = (p) => <Icon {...p} paths={["M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z","M7 11V7a5 5 0 0110 0v4"]}/>;
+    const EyeOff = (p) => <Icon {...p} paths={["M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94","M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19","M1 1l22 22","M14.12 14.12a3 3 0 11-4.24-4.24"]}/>;
+    const ClipboardList = (p) => <Icon {...p} paths={["M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2","M15 2H9a1 1 0 00-1 1v2a1 1 0 001 1h6a1 1 0 001-1V3a1 1 0 00-1-1z","M12 11h4","M12 16h4","M8 11h.01","M8 16h.01"]}/>;
+    const Users = (p) => <Icon {...p} paths={["M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2","M9 3a4 4 0 100 8 4 4 0 000-8z","M23 21v-2a4 4 0 00-3-3.87","M16 3.13a4 4 0 010 7.75"]}/>;
+    const HeartPulse = (p) => <Icon {...p} paths={["M19.5 12.572l-7.5 7.428-7.5-7.428A5 5 0 1112 6.006a5 5 0 017.5 6.572z","M12 6l-1 4h2l-1 4"]}/>;
+    const RotateCcw = (p) => <Icon {...p} paths={["M1 4v6h6","M3.51 15a9 9 0 102.13-9.36L1 10"]}/>;
+    const Database = (p) => (
+      <svg width={p.size||24} height={p.size||24} className={p.className||""} style={p.style||{}} {...iconDefaults} aria-hidden="true">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+      </svg>
+    );
+    const ScanEye = (p) => <Icon {...p} paths={["M2 8V6a2 2 0 012-2h3","M17 4h3a2 2 0 012 2v2","M22 16v2a2 2 0 01-2 2h-3","M7 20H4a2 2 0 01-2-2v-2","M12 15a3 3 0 100-6 3 3 0 000 6z"]}/>;
+    const GitBranch = (p) => (
+      <svg width={p.size||24} height={p.size||24} className={p.className||""} style={p.style||{}} {...iconDefaults} aria-hidden="true">
+        <circle cx="6" cy="18" r="3"/><path d="M6 15V3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v1a2 2 0 01-2 2H8a2 2 0 00-2 2v1"/>
+      </svg>
+    );
+    const Play = (p) => <Icon {...p} paths={["M5 3l14 9-14 9V3z"]}/>;
+    const Sun = (p) => <Icon {...p} paths={["M12 1v2","M12 21v2","M4.22 4.22l1.42 1.42","M18.36 18.36l1.42 1.42","M1 12h2","M21 12h2","M4.22 19.78l1.42-1.42","M18.36 5.64l1.42-1.42","M17 12a5 5 0 11-10 0 5 5 0 0110 0z"]}/>;
+    const Moon = (p) => <Icon {...p} paths={["M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"]}/>;
+
+
+    // ─── Helper ───
+    const FadeInSection = ({ children, className='', delay=0 }) => {
+      const domRef = useRef();
+      useEffect(() => {
+        const el = domRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              setTimeout(() => { if (el) el.classList.add('visible'); }, delay);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold:0.1, rootMargin:'0px 0px -50px 0px' });
+        observer.observe(el);
+        return () => observer.unobserve(el);
+      }, [delay]);
+      return <div ref={domRef} className={`reveal-cinematic ${className}`}>{children}</div>;
+    };
+
+    // ─── SpotlightCard (mouse-following glow) ───
+    const SpotlightCard = ({ children, className='' }) => {
+      const divRef = useRef(null);
+      const handleMouseMove = (e) => {
+        if (!divRef.current) return;
+        const rect = divRef.current.getBoundingClientRect();
+        divRef.current.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+        divRef.current.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+      };
+      return (
+        <div ref={divRef} onMouseMove={handleMouseMove} className={`spotlight-card ${className}`}>
+          <div className="relative z-10 h-full">{children}</div>
+        </div>
+      );
+    };
+
+
+    // ─── PremiumCard (3D tilt + spotlight + border trace) ───
+    const PremiumCard = ({ children, className='' }) => {
+      const cardRef = useRef(null);
+      const glowRef = useRef(null);
+      const traceRef = useRef(null);
+
+      const handleMouseMove = (e) => {
+        const card = cardRef.current;
+        if (!card) return;
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.transform = 'scale(1.02)';
+        if (glowRef.current) {
+          glowRef.current.style.background = `radial-gradient(600px circle at ${x}px ${y}px, color-mix(in srgb, var(--primary) 15%, transparent), transparent 50%)`;
+        }
+        if (traceRef.current) {
+          traceRef.current.style.setProperty('--border-x', `${x}px`);
+          traceRef.current.style.setProperty('--border-y', `${y}px`);
+        }
+      };
+      const handleMouseLeave = () => {
+        const card = cardRef.current;
+        if (!card) return;
+        card.style.transform = 'scale(1)';
+      };
+
+      return (
+        <div ref={cardRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} className={`premium-card ${className}`}>
+          <div ref={glowRef} className="card-glow"></div>
+          <div ref={traceRef} className="border-trace"></div>
+          <div className="relative z-10 h-full">{children}</div>
+        </div>
+      );
+    };
+
+
+    // ─── Theme System ───
+    const COLOR_THEMES = [
+      { id:'ocean-blue',       label:'Ocean Blue',      dot:'#4b7cf5', logoBase:'ocean-blue' },
+      { id:'violet',           label:'Violet',          dot:'#8a08fd', logoBase:'violet' },
+      { id:'teal',             label:'Teal',            dot:'#14b8a6', logoBase:'teal' },
+      { id:'emerald',          label:'Emerald',         dot:'#10b981', logoBase:'emerald' },
+      { id:'indigo',           label:'Indigo',          dot:'#6366f1', logoBase:'indigo' },
+      { id:'rose',             label:'Rose',            dot:'#f43f5e', logoBase:'rose' },
+      { id:'amber',            label:'Amber',           dot:'#f59e0b', logoBase:'amber' },
+      { id:'grad-blue-violet', label:'Blue → Violet',   dot:'linear-gradient(135deg,#4b7cf5,#8a08fd)', logoBase:'indigo' },
+      { id:'grad-teal-blue',   label:'Teal → Blue',     dot:'linear-gradient(135deg,#14b8a6,#4b7cf5)', logoBase:'teal' },
+      { id:'grad-violet-rose', label:'Violet → Rose',   dot:'linear-gradient(135deg,#8a08fd,#f43f5e)', logoBase:'violet' },
+    ];
+
+    const ThemeContext = React.createContext({ dark:true, colorTheme:'ocean-blue', toggleMode:()=>{}, setColor:()=>{} });
+    const useTheme = () => React.useContext(ThemeContext);
+
+    const ThemeProvider = ({ children }) => {
+      const [dark, setDark] = useState(() => {
+        const saved = localStorage.getItem('sincroniza-mode');
+        return saved ? saved === 'dark' : true;
+      });
+      const [colorTheme, setColorTheme] = useState(() => {
+        return localStorage.getItem('sincroniza-color') || 'ocean-blue';
+      });
+      useEffect(() => {
+        const el = document.documentElement;
+        el.setAttribute('data-mode', dark ? 'dark' : 'light');
+        el.setAttribute('data-color', colorTheme);
+        el.style.colorScheme = dark ? 'dark' : 'light';
+        document.querySelector('meta[name="theme-color"]').content = dark ? '#000000' : '#f1f3f7';
+        localStorage.setItem('sincroniza-mode', dark ? 'dark' : 'light');
+        localStorage.setItem('sincroniza-color', colorTheme);
+      }, [dark, colorTheme]);
+      return (
+        <ThemeContext.Provider value={{ dark, colorTheme, toggleMode:()=>setDark(d=>!d), setColor:setColorTheme }}>
+          {children}
+        </ThemeContext.Provider>
+      );
+    };
+
+    // ─── Logo ───
+    const Logo = ({ height=32, className="", decorative=false }) => {
+      const { dark, colorTheme } = useTheme();
+      const logoBase = COLOR_THEMES.find(t => t.id === colorTheme)?.logoBase || 'ocean-blue';
+      const src = dark ? `logo-${logoBase}.svg` : `logo-${logoBase}-light.svg`;
+      return <img src={src} alt={decorative ? "" : "Sincroniza"} height={height} width={Math.round(height * 1.16)} style={{ objectFit:'contain', display:'block' }} className={className} aria-hidden={decorative || undefined}/>;
+    };
+
+    // ─── Theme Controls ───
+    const ThemeToggle = () => {
+      const { dark, toggleMode } = useTheme();
+      return (
+        <button onClick={toggleMode} aria-label={dark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+                className="w-9 h-9 rounded-lg flex items-center justify-center card-transition"
+                style={{ border:'1px solid var(--border)', color:'var(--muted-fg)' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor='var(--accent)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor='transparent'}>
+          {dark ? <Sun size={16}/> : <Moon size={16}/>}
+        </button>
+      );
+    };
+
+    const Palette = (p) => <Icon {...p} paths={["M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10a2 2 0 002-2v-.09a1.5 1.5 0 011.5-1.5h.5A5 5 0 0022 13.5 10.5 10.5 0 0012 2z","M8 12a1.5 1.5 0 100-3 1.5 1.5 0 000 3z","M12 8a1.5 1.5 0 100-3 1.5 1.5 0 000 3z","M16 12a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"]}/>;
+
+    const ColorPicker = () => {
+      const { colorTheme, setColor } = useTheme();
+      const [open, setOpen] = useState(false);
+      const ref = useRef();
+
+      useEffect(() => {
+        const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+      }, []);
+
+      return (
+        <div className="relative" ref={ref}>
+          <button onClick={() => setOpen(!open)} aria-label="Alterar tema de cores"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center card-transition"
+                  style={{ border:'1px solid var(--border)', color:'var(--muted-fg)' }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor='var(--accent)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor='transparent'}>
+            <Palette size={16}/>
+          </button>
+          {open && (
+            <div className="absolute right-0 top-full mt-2 rounded-[0.75rem] p-3 z-50 w-52"
+                 style={{ backgroundColor:'var(--card)', border:'1px solid var(--border)', boxShadow:'0 8px 24px rgba(0,0,0,0.3)' }}>
+              <div className="text-xs font-medium uppercase tracking-wider mb-2 px-1" style={{ color:'var(--muted-fg)' }}>Tema de cores</div>
+              {COLOR_THEMES.map(t => (
+                <button key={t.id}
+                  className="w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left card-transition text-sm"
+                  style={{ backgroundColor: colorTheme===t.id ? 'var(--accent)' : 'transparent', color:'var(--card-fg)', border:'none', cursor:'pointer', fontFamily:'Barlow, sans-serif' }}
+                  onMouseEnter={e => { if(colorTheme!==t.id) e.currentTarget.style.backgroundColor='var(--accent)'; }}
+                  onMouseLeave={e => { if(colorTheme!==t.id) e.currentTarget.style.backgroundColor='transparent'; }}
+                  onClick={() => { setColor(t.id); setOpen(false); }}>
+                  <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background:t.dot }}></div>
+                  <span>{t.label}</span>
+                  {colorTheme===t.id && <Check size={14} style={{ color:'var(--primary)', marginLeft:'auto' }}/>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+
+    // ─── HeroCard (interactive grid + flow visualization) ───
+    const HeroCard = () => {
+      const cardRef = useRef(null);
+      const glowRef = useRef(null);
+
+      const handleMouseMove = (e) => {
+        const card = cardRef.current;
+        const glow = glowRef.current;
+        if (!card) return;
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        if (glow) glow.style.background = `radial-gradient(300px circle at ${x}px ${y}px, color-mix(in srgb, var(--primary) 10%, transparent), transparent 60%)`;
+        if (glow) glow.style.opacity = '1';
+      };
+      const handleMouseLeave = () => {
+        if (glowRef.current) glowRef.current.style.opacity = '0';
+      };
+
+      return (
+        <div className="relative flex items-center justify-center animate-float" style={{ aspectRatio:'1/1.05', animationDuration:'10s' }}>
+          <div ref={cardRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
+               className="w-full h-full rounded-[1.3rem] p-8 flex flex-col justify-between relative elevation-hero overflow-hidden"
+               style={{ backgroundColor:'var(--card)', border:'1px solid var(--border)' }}>
+
+            {/* Base grid with center fade */}
+            <div className="absolute inset-0 rounded-[1.3rem] overflow-hidden pointer-events-none z-0">
+              <div className="absolute inset-0" style={{ opacity:0.18, backgroundImage:'linear-gradient(to right, var(--muted-fg) 1px, transparent 1px), linear-gradient(to bottom, var(--muted-fg) 1px, transparent 1px)', backgroundSize:'28px 28px', maskImage:'radial-gradient(ellipse at center, black 20%, transparent 75%)', WebkitMaskImage:'radial-gradient(ellipse at center, black 20%, transparent 75%)' }}></div>
+            </div>
+
+            {/* Mouse-following grid highlight */}
+            <div ref={glowRef} className="absolute inset-0 rounded-[1.3rem] pointer-events-none z-0" style={{ opacity:0, transition:'opacity 0.3s ease' }}></div>
+
+            {/* Animated SVG Paths */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <path id="p1" d="M 50 20 L 50 42" stroke="var(--border)" strokeWidth="0.8" fill="none" className="path-draw"/>
+              <path id="p2" d="M 48 58 C 48 70, 25 65, 25 80" stroke="var(--border)" strokeWidth="0.8" fill="none" className="path-draw-reverse"/>
+              <path id="p3" d="M 52 58 C 52 70, 75 65, 75 80" stroke="var(--border)" strokeWidth="0.8" fill="none" className="path-draw"/>
+
+              <g><circle r="0.8" fill="#FFF"/><circle r="2" fill="var(--primary)" opacity="0.7"/><circle r="3" fill="var(--primary)" opacity="0.15"/>
+                <animateMotion dur="2.5s" repeatCount="indefinite" calcMode="linear"><mpath href="#p1"/></animateMotion>
+                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="2.5s" repeatCount="indefinite"/>
+              </g>
+              <g><circle r="0.6" fill="#FFF"/><circle r="1.5" fill="var(--primary)" opacity="0.5"/>
+                <animateMotion dur="2.5s" begin="1.2s" repeatCount="indefinite" calcMode="linear"><mpath href="#p1"/></animateMotion>
+                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="2.5s" begin="1.2s" repeatCount="indefinite"/>
+              </g>
+              <g><circle r="0.8" fill="#FFF"/><circle r="2" fill="var(--primary)" opacity="0.7"/><circle r="3" fill="var(--primary)" opacity="0.15"/>
+                <animateMotion dur="2.8s" begin="0.8s" repeatCount="indefinite" calcMode="linear"><mpath href="#p2"/></animateMotion>
+                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="2.8s" begin="0.8s" repeatCount="indefinite"/>
+              </g>
+              <g><circle r="0.8" fill="#FFF"/><circle r="2" fill="var(--primary)" opacity="0.7"/><circle r="3" fill="var(--primary)" opacity="0.15"/>
+                <animateMotion dur="2.8s" begin="0.5s" repeatCount="indefinite" calcMode="linear"><mpath href="#p3"/></animateMotion>
+                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="2.8s" begin="0.5s" repeatCount="indefinite"/>
+              </g>
+              <g><circle r="0.6" fill="#FFF"/><circle r="1.5" fill="var(--primary)" opacity="0.5"/>
+                <animateMotion dur="2.8s" begin="2s" repeatCount="indefinite" calcMode="linear"><mpath href="#p2"/></animateMotion>
+                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="2.8s" begin="2s" repeatCount="indefinite"/>
+              </g>
+            </svg>
+
+            {/* Top: HR System */}
+            <div className="self-center rounded-[0.75rem] p-4 flex items-center gap-4 w-64 z-30" style={{ backgroundColor:'var(--muted)', border:'1px solid var(--input)' }}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor:'var(--bg)' }}><Database size={20} style={{ color:'var(--primary)' }}/></div>
+              <div>
+                <div className="text-xs uppercase tracking-wider mb-0.5" style={{ color:'var(--muted-fg)' }}>Origem</div>
+                <div className="text-sm font-semibold" style={{ color:'var(--fg)' }}>Sistema de RH</div>
+              </div>
+            </div>
+
+            {/* Middle: Sincroniza engine */}
+            <div className="flex-1 relative flex items-center justify-center my-4">
+              <div className="absolute w-36 h-36 rounded-full animate-spin-slow" style={{ border:'1px dashed var(--border)', opacity:0.5 }}></div>
+              <div className="absolute w-28 h-28 rounded-full animate-spin-slow-reverse" style={{ border:'1px solid var(--border)', borderTopColor:'transparent', opacity:0.7 }}></div>
+              <div className="z-10 p-4 rounded-[1.3rem] flex items-center justify-center" style={{ backgroundColor:'var(--bg)', border:'2px solid var(--primary)', boxShadow:'0 0 30px color-mix(in srgb, var(--primary) 20%, transparent)' }}>
+                <Logo height={40} className="logo-spin" decorative/>
+              </div>
+            </div>
+
+            {/* Bottom: Destinations */}
+            <div className="flex justify-between z-10 w-full px-4">
+              <div className="rounded-[0.75rem] p-4 flex flex-col items-center gap-2 w-32" style={{ backgroundColor:'var(--bg)', border:'1px solid var(--border)' }}>
+                <Layers size={22} style={{ color:'var(--muted-fg)' }}/><div className="text-xs font-semibold text-center" style={{ color:'var(--fg)' }}>Active Directory</div>
+              </div>
+              <div className="rounded-[0.75rem] p-4 flex flex-col items-center gap-2 w-32" style={{ backgroundColor:'var(--bg)', border:'1px solid var(--border)' }}>
+                <Users size={22} style={{ color:'var(--muted-fg)' }}/><div className="text-xs font-semibold text-center" style={{ color:'var(--fg)' }}>Entra ID</div>
+              </div>
+            </div>
+
+            {/* Event storm pills */}
+            {[
+              { label:'Nova admissão',   color:'oklch(0.69 0.155 160.35)', top:'2%',   left:'1%',   delay:0,   dur:5.0 },
+              { label:'Transferido',     color:'oklch(0.82 0.16 82.5)',    top:'12%',  left:'2%',   delay:1.8, dur:4.5 },
+              { label:'Desligamento',    color:'var(--destructive)',        top:'22%',  left:'1%',   delay:3.5, dur:5.2 },
+              { label:'Promovido',       color:'var(--primary)',            top:'3%',   right:'2%',  delay:0.6, dur:4.8 },
+              { label:'Nova admissão',   color:'oklch(0.69 0.155 160.35)', top:'13%',  right:'1%',  delay:2.4, dur:5.0 },
+              { label:'Férias',          color:'oklch(0.82 0.16 82.5)',    top:'23%',  right:'2%',  delay:4.0, dur:4.6 },
+              { label:'Desligamento',    color:'var(--destructive)',        top:'30%',  left:'4%',   delay:1.2, dur:5.4 },
+              { label:'Promovido',       color:'var(--primary)',            top:'29%',  right:'4%',  delay:3.0, dur:4.8 },
+              { label:'Nova admissão',   color:'oklch(0.69 0.155 160.35)', top:'31%',  left:'30%',  delay:2.0, dur:5.2 },
+              { label:'Transferido',     color:'oklch(0.82 0.16 82.5)',    top:'30%',  right:'28%', delay:4.5, dur:4.7 },
+            ].map((e, i) => {
+              const pos = { position:'absolute', top:e.top, zIndex:20 };
+              if (e.left) pos.left = e.left;
+              if (e.right) pos.right = e.right;
+              return (
+                <div key={i} className="rounded-full px-4 py-2 flex items-center gap-2 text-sm"
+                     style={{ ...pos, backgroundColor:'var(--card)', border:'1px solid var(--border)',
+                              animation: `eventPop ${e.dur}s cubic-bezier(0.4,0,0.2,1) ${e.delay}s infinite`,
+                              opacity:0, whiteSpace:'nowrap' }}>
+                  <div className="rounded-full flex-shrink-0" style={{ width:6, height:6, backgroundColor:e.color }} aria-hidden="true"></div>
+                  <span style={{ color:'var(--card-fg)' }}>{e.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+
+    // ─── Navbar ───
+    const Navbar = () => {
+      const [scrolled, setScrolled] = useState(false);
+      const [open, setOpen] = useState(false);
+      useEffect(() => {
+        const h = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', h);
+        return () => window.removeEventListener('scroll', h);
+      }, []);
+
+      const links = [
+        { name:'Produto', href:'#como-funciona' },
+        { name:'Funcionalidades', href:'#funcionalidades' },
+        { name:'Segurança', href:'#seguranca' },
+        { name:'Preços', href:'#precos' },
+        { name:'Contato', href:'#contato' },
+      ];
+
+      return (
+        <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'nav-glass py-4' : 'bg-transparent py-6'}`}>
+          <div className="max-w-screen-2xl mx-auto px-6 md:px-12 flex justify-between items-center">
+            <a href="#" className="flex items-center gap-3 no-underline" onClick={(e) => { e.preventDefault(); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ textDecoration:'none' }}>
+              <Logo height={34}/>
+              <span className="tracking-wide text-xl" style={{ color:'var(--logo-text)', letterSpacing:'0.06em', fontFamily:"'Pattanakarn', sans-serif", fontWeight:600 }}>sincroniza</span>
+            </a>
+
+            <div className="hidden lg:flex items-center gap-8 px-8 py-2.5 rounded-full" style={{ backgroundColor:'var(--nav-pill-bg)', border:'1px solid var(--border)', backdropFilter:'blur(8px)' }}>
+              {links.slice(0,-1).map(l => (
+                <a key={l.name} href={l.href} className="text-base font-medium transition-colors duration-150" style={{ color:'var(--card-fg)' }}
+                   onMouseEnter={e => e.target.style.color='var(--fg)'}
+                   onMouseLeave={e => e.target.style.color='var(--card-fg)'}>{l.name}</a>
+              ))}
+            </div>
+
+            <div className="hidden lg:flex items-center gap-3">
+              <ColorPicker/>
+              <ThemeToggle/>
+              <a href="#contato" className="btn-primary px-6 py-2.5 rounded-lg text-base">Agendar Demo</a>
+            </div>
+
+            <div className="flex items-center gap-2 lg:hidden">
+              <ColorPicker/>
+              <ThemeToggle/>
+              <button style={{ color:'var(--fg)' }} onClick={() => setOpen(!open)} aria-label="Menu">
+                {open ? <XIcon size={26}/> : <MenuIcon size={26}/>}
+              </button>
+            </div>
+          </div>
+
+          {open && (
+            <div className="absolute top-full left-0 w-full h-screen nav-glass-drawer flex flex-col items-center pt-12 gap-8 lg:hidden">
+              {links.map(l => (
+                <a key={l.name} href={l.href} className="text-xl font-medium" style={{ color:'var(--card-fg)' }} onClick={() => setOpen(false)}>{l.name}</a>
+              ))}
+              <a href="#contato" onClick={() => setOpen(false)} className="btn-primary px-8 py-4 rounded-[0.75rem] text-lg mt-4 text-center" style={{ width:'80%' }}>Agendar Demonstração</a>
+            </div>
+          )}
+        </nav>
+      );
+    };
+
+
+    // ─── Hero ───
+    const Hero = () => (
+      <section className="relative min-h-screen flex items-center pt-24 pb-12 overflow-hidden" style={{ backgroundColor:'var(--bg)' }}>
+        <div className="perspective-grid"></div>
+        {/* Ambient orbs */}
+        <div className="absolute rounded-full animate-float" style={{ top:'10%', left:'20%', width:400, height:400, backgroundColor:'var(--primary)', filter:'blur(200px)', opacity:0.05, animationDelay:'-2s' }}></div>
+        <div className="absolute rounded-full animate-float" style={{ bottom:'10%', right:'10%', width:600, height:600, backgroundColor:'var(--primary)', filter:'blur(250px)', opacity:0.03, animationDelay:'-6s' }}></div>
+
+        <div className="max-w-screen-2xl mx-auto px-6 md:px-12 grid lg:grid-cols-2 gap-16 items-start relative z-10">
+          <FadeInSection>
+            <h1 className="font-bold text-4xl md:text-5xl lg:text-6xl leading-tight mb-6" style={{ color:'var(--fg)', letterSpacing:'-0.025em', lineHeight:1.05 }}>
+              Sincronização inteligente entre <span style={{ color:'var(--primary)' }}>RH e identidade digital</span>
+            </h1>
+            <p className="text-2xl md:text-2xl leading-relaxed mb-10 max-w-2xl" style={{ color:'var(--card-fg)', lineHeight:1.6 }}>
+              Da admissão ao desligamento, o Sincroniza automatiza a gestão de contas no Active Directory e Entra ID — com segurança, rastreabilidade e zero intervenção manual.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <a href="#contato" className="btn-primary px-8 py-4 rounded-[0.75rem] text-center flex items-center justify-center gap-2 text-lg">Agendar Demonstração <ArrowRight size={18}/></a>
+              <a href="#como-funciona" className="btn-secondary px-8 py-4 rounded-[0.75rem] text-center text-lg">Ver como funciona</a>
+            </div>
+          </FadeInSection>
+
+          {/* Hero Visualization */}
+          <FadeInSection delay={200} className="relative hidden md:block mt-4">
+            <HeroCard/>
+          </FadeInSection>
+        </div>
+      </section>
+    );
+
+
+    // ─── Workflow ───
+    const WorkflowSection = () => {
+      const steps = [
+        { icon:<Database size={18}/>, title:"Conectar", desc:"Integração via banco de dados com mapeamento visual estruturado para o seu sistema de RH (Benner, Senior, etc)." },
+        { icon:<ScanEye size={18}/>, title:"Detectar", desc:"O motor de sincronização identifica alterações cadastrais através de comparação inteligente a cada ciclo." },
+        { icon:<GitBranch size={18}/>, title:"Atribuir", desc:"O motor de regras avalia o cargo e localidade para determinar os acessos, grupos e licenças apropriados." },
+        { icon:<Play size={18}/>, title:"Executar", desc:"Ações provisionadas de forma segura no AD e Entra ID, passando por aprovação humana caso configurado." },
+      ];
+      return (
+        <section id="como-funciona" className="py-20 relative overflow-hidden section-card-bg" style={{ backgroundColor:'var(--card)' }}>
+          {/* Grid background — visible at edges, fading at center */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ backgroundImage:'linear-gradient(to right, rgba(150,150,150,0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(150,150,150,0.25) 1px, transparent 1px)', backgroundSize:'60px 60px', maskImage:'linear-gradient(to right, black 0%, transparent 55%, transparent 45%, black 100%)', WebkitMaskImage:'linear-gradient(to right, black 0%, transparent 55%, transparent 45%, black 100%)' }}></div>
+          <div className="max-w-screen-2xl mx-auto px-6 md:px-12 relative z-10">
+            <FadeInSection>
+              <div className="text-center mb-14">
+                <span className="font-medium tracking-wider text-sm uppercase mb-3 block" style={{ color:'var(--primary)', letterSpacing:'0.12em' }}>Como Funciona</span>
+                <h2 className="font-semibold text-4xl md:text-5xl leading-tight" style={{ color:'var(--fg)' }}>Do RH à identidade digital</h2>
+              </div>
+            </FadeInSection>
+
+            <div className="relative max-w-5xl mx-auto">
+              {/* Vertical energy line */}
+              <div className="absolute left-[30px] md:left-1/2 top-0 bottom-0 w-[1px] md:-translate-x-1/2" style={{ backgroundColor:'var(--border)' }}>
+                <div className="absolute left-1/2 w-[2px] h-[150px] -translate-x-1/2 animate-pulse-down" style={{ background:'linear-gradient(to bottom, transparent, var(--primary), transparent)', boxShadow:'0 0 12px var(--primary)' }}></div>
+              </div>
+
+              <div className="flex flex-col gap-12 md:gap-8">
+                {steps.map((s,i) => {
+                  const isEven = i % 2 === 0;
+                  return (
+                    <FadeInSection key={i} delay={i*150}>
+                      <div className={`relative flex items-center flex-col md:flex-row ${isEven ? 'md:flex-row-reverse' : ''}`}>
+                        {/* Central node */}
+                        <div className="absolute left-[30px] md:left-1/2 top-[40px] md:top-1/2 w-12 h-12 rounded-full flex items-center justify-center -translate-x-1/2 md:-translate-y-1/2 z-20 card-transition" style={{ backgroundColor:'var(--bg)', border:'1px solid var(--border)', color:'var(--primary)' }}
+                             onMouseEnter={e => { e.currentTarget.style.borderColor='var(--primary)'; e.currentTarget.style.transform='translate(-50%, -50%) scale(1.1)'; }}
+                             onMouseLeave={e => { e.currentTarget.style.borderColor='var(--border)'; e.currentTarget.style.transform='translate(-50%, -50%) scale(1)'; }}>
+                          {s.icon}
+                        </div>
+
+                        {/* Content card */}
+                        <div className={`w-full md:w-[45%] pl-[80px] md:pl-0 ${isEven ? 'md:pr-16' : 'md:pl-16'}`}>
+                          <SpotlightCard className="p-8 md:p-10 cursor-default">
+                            <div className={`absolute top-4 ${isEven ? 'left-6' : 'right-6'} font-bold text-7xl pointer-events-none`} style={{ color:'var(--muted)', opacity:0.15 }} aria-hidden="true">0{i+1}</div>
+                            <h3 className="font-semibold text-xl md:text-2xl mb-3 relative z-10" style={{ color:'var(--fg)' }}>{s.title}</h3>
+                            <p className="text-base leading-relaxed relative z-10" style={{ color:'var(--card-fg)' }}>{s.desc}</p>
+                          </SpotlightCard>
+                        </div>
+                        <div className="hidden md:block md:w-[45%]"></div>
+                      </div>
+                    </FadeInSection>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    };
+
+
+    // ─── Features ───
+    const FeatureGrid = () => {
+      const features = [
+        { icon:<RefreshCw/>, title:"Sincronização Contínua", desc:"Monitore mudanças no RH e propague automaticamente para AD e Entra ID, sem scripts manuais." },
+        { icon:<ShieldCheck/>, title:"Aprovação Inteligente", desc:"Ações em massa ou de alto impacto passam por fluxo de aprovação antes da execução." },
+        { icon:<UserCog/>, title:"Provisionamento Automático", desc:"Crie contas, defina senhas, atribua grupos e licenças automaticamente na admissão." },
+        { icon:<Activity/>, title:"Monitoramento de Saúde", desc:"Verificação contínua de conectividade com AD, Entra ID e banco de dados do RH." },
+        { icon:<Layers/>, title:"Regras de Atribuição", desc:"Defina pacotes de recursos (grupos, licenças, apps) e associe a critérios dinâmicos." },
+        { icon:<FileText/>, title:"Rastreabilidade Completa", desc:"Cada ação executada é registrada com contexto completo para auditoria e compliance." }
+      ];
+      return (
+        <section id="funcionalidades" className="py-20" style={{ backgroundColor:'var(--bg)' }}> {/* bg */}
+          <div className="max-w-screen-2xl mx-auto px-6 md:px-12">
+            <FadeInSection className="max-w-5xl mx-auto mb-14 text-center">
+              <span className="font-medium tracking-wider text-sm uppercase mb-3 block" style={{ color:'var(--primary)', letterSpacing:'0.08em' }}>Funcionalidades</span>
+              <h2 className="font-semibold text-4xl md:text-5xl leading-tight" style={{ color:'var(--fg)' }}>Tudo que você precisa para automatizar o ciclo de vida de identidades</h2>
+            </FadeInSection>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {features.map((f,i) => (
+                <FadeInSection key={i} delay={i*100}>
+                  <PremiumCard className="h-full p-8 flex flex-col items-start group cursor-default">
+                    <div className="mb-6 w-12 h-12 rounded-xl flex items-center justify-center card-transition group-hover:scale-110 group-hover:shadow-lg" style={{ backgroundColor:'var(--accent)', border:'1px solid var(--border)', color:'var(--primary)', transition:'transform 0.3s, box-shadow 0.3s' }}>
+                      {React.cloneElement(f.icon, { size:20 })}
+                    </div>
+                    <h3 className="font-semibold text-xl mb-3" style={{ color:'var(--fg)' }}>{f.title}</h3>
+                    <p className="text-base leading-relaxed" style={{ color:'var(--card-fg)' }}>{f.desc}</p>
+                  </PremiumCard>
+                </FadeInSection>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    };
+
+
+    // ─── Impact ───
+    const ImpactSection = () => (
+      <section className="py-20 relative overflow-hidden section-card-bg" style={{ backgroundColor:'var(--card)' }}>
+        <div className="absolute inset-0 pointer-events-none flex items-end" style={{ opacity:0.06 }}>
+          <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="w-full h-full" style={{ color:'var(--primary)' }} aria-hidden="true">
+            <path d="M0,300 L0,250 L100,220 L200,240 L300,180 L400,200 L500,100 L600,130 L700,50 L800,80 L900,20 L1000,40 L1000,300 Z" fill="currentColor" opacity="0.3"/>
+            <path d="M0,250 L100,220 L200,240 L300,180 L400,200 L500,100 L600,130 L700,50 L800,80 L900,20 L1000,40" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5"/>
+          </svg>
+        </div>
+        <div className="max-w-screen-2xl mx-auto px-6 md:px-12 relative z-10">
+          <FadeInSection className="text-center mb-14">
+            <span className="font-medium tracking-wider text-sm uppercase mb-3 block" style={{ color:'var(--primary)', letterSpacing:'0.08em' }}>Impacto</span>
+            <h2 className="font-semibold text-4xl md:text-5xl" style={{ color:'var(--fg)' }}>Resultados que justificam o investimento</h2>
+          </FadeInSection>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
+            {[
+              { stat:"95%", label:"Redução de erros", sub:"Elimine inconsistências entre RH e diretório" },
+              { stat:"< 5 min", label:"Tempo de provisionamento", sub:"Da admissão à conta ativa no sistema" },
+              { stat:"100%", label:"Rastreabilidade", sub:"Todas as ações registradas para auditoria" },
+              { stat:"0", label:"Contas órfãs", sub:"Desligamentos propagados instantaneamente" }
+            ].map((item,i) => (
+              <FadeInSection key={i} delay={i*120} className="text-center">
+                <div className="stat-number font-bold text-6xl md:text-7xl mb-3 tracking-tight" style={{ background:'linear-gradient(to bottom, var(--fg), var(--muted-fg))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', letterSpacing:'-0.03em' }}>{item.stat}</div>
+                <div className="font-semibold text-lg mb-1.5" style={{ color:'var(--card-fg)' }}>{item.label}</div>
+                <div className="text-base px-4" style={{ color:'var(--muted-fg)' }}>{item.sub}</div>
+              </FadeInSection>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+
+
+    // ─── Architecture ───
+    const ArchitectureSection = () => (
+      <section id="arquitetura" className="py-20" style={{ backgroundColor:'var(--bg)' }}>
+        <div className="max-w-screen-2xl mx-auto px-6 md:px-12">
+          <div className="grid lg:grid-cols-2 gap-14 items-center">
+
+            {/* Left: text + info cards stacked */}
+            <FadeInSection>
+              <span className="font-medium tracking-wider text-sm uppercase mb-3 block" style={{ color:'var(--primary)', letterSpacing:'0.08em' }}>Arquitetura</span>
+              <h2 className="font-semibold text-4xl md:text-5xl mb-5" style={{ color:'var(--fg)' }}>O RH como única fonte de verdade</h2>
+              <p className="text-lg leading-relaxed mb-10" style={{ color:'var(--card-fg)', lineHeight:1.6 }}>O Sincroniza segue um modelo unidirecional: o sistema de RH é a autoridade absoluta. Mudanças fluem estruturadamente do RH para os provedores de identidade — nunca o contrário.</p>
+
+              <div className="flex flex-col gap-5">
+                {[
+                  { icon:<ShieldCheck size={20}/>, title:"Segurança desde a concepção", desc:"Credenciais criptografadas, conexões monitoradas, ações rastreadas. Cada mudança passa por validação antes da execução." },
+                  { icon:<EyeOff size={20}/>, title:"Privacidade sem atrito", desc:"Controle granular sobre quais dados são sincronizados. Campos sensíveis podem ser excluídos ou mascarados, em conformidade com a LGPD." }
+                ].map((c,i) => (
+                  <SpotlightCard key={i} className="p-6">
+                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-3" style={{ color:'var(--fg)' }}><span style={{ color:'var(--primary)' }}>{c.icon}</span>{c.title}</h3>
+                    <p className="text-base leading-relaxed" style={{ color:'var(--card-fg)' }}>{c.desc}</p>
+                  </SpotlightCard>
+                ))}
+              </div>
+            </FadeInSection>
+
+            {/* Right: vertical flow diagram card (hero-style) */}
+            <FadeInSection delay={200}>
+              <div className="rounded-[1.3rem] p-10 relative overflow-hidden min-h-[520px] flex flex-col justify-center" style={{ backgroundColor:'var(--card)', border:'1px solid var(--border)' }}>
+
+                {/* Inner grid pattern */}
+                <div className="absolute inset-0 pointer-events-none" style={{ opacity:0.05, backgroundImage:'linear-gradient(to right, var(--muted-fg) 1px, transparent 1px), linear-gradient(to bottom, var(--muted-fg) 1px, transparent 1px)', backgroundSize:'28px 28px', maskImage:'radial-gradient(ellipse at center, black 30%, transparent 70%)', WebkitMaskImage:'radial-gradient(ellipse at center, black 30%, transparent 70%)' }}></div>
+
+                {/* Animated SVG connector paths */}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                  <path id="arch-p1" d="M 50 18 L 50 40" stroke="var(--border)" strokeWidth="0.5" fill="none" className="path-draw"/>
+                  <path id="arch-p2" d="M 48 56 C 48 68, 28 65, 28 80" stroke="var(--border)" strokeWidth="0.5" fill="none" className="path-draw-reverse"/>
+                  <path id="arch-p3" d="M 52 56 C 52 68, 72 65, 72 80" stroke="var(--border)" strokeWidth="0.5" fill="none" className="path-draw"/>
+
+                  {/* Animated pulses */}
+                  <g>
+                    <circle r="0.8" fill="var(--primary)"/><circle r="2" fill="var(--primary)" opacity="0.4"/>
+                    <animateMotion dur="3s" repeatCount="indefinite" calcMode="linear"><mpath href="#arch-p1"/></animateMotion>
+                    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="3s" repeatCount="indefinite"/>
+                  </g>
+                  <g>
+                    <circle r="0.8" fill="var(--primary)"/><circle r="2" fill="var(--primary)" opacity="0.4"/>
+                    <animateMotion dur="3.5s" begin="1s" repeatCount="indefinite" calcMode="linear"><mpath href="#arch-p2"/></animateMotion>
+                    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="3.5s" begin="1s" repeatCount="indefinite"/>
+                  </g>
+                  <g>
+                    <circle r="0.8" fill="var(--primary)"/><circle r="2" fill="var(--primary)" opacity="0.4"/>
+                    <animateMotion dur="3.5s" begin="0.5s" repeatCount="indefinite" calcMode="linear"><mpath href="#arch-p3"/></animateMotion>
+                    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="3.5s" begin="0.5s" repeatCount="indefinite"/>
+                  </g>
+                </svg>
+
+                <div className="flex flex-col items-center gap-4 relative z-10">
+
+                  {/* Source: Sistema de RH */}
+                  <div className="rounded-[0.75rem] p-5 flex items-center gap-4 w-72" style={{ backgroundColor:'var(--muted)', border:'1px solid var(--border)' }}>
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor:'var(--bg)', border:'1px solid var(--border)' }}>
+                      <Database size={18} style={{ color:'var(--primary)' }}/>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-widest mb-0.5 font-medium" style={{ color:'var(--muted-fg)' }}>Origem</div>
+                      <div className="text-sm font-semibold" style={{ color:'var(--fg)' }}>Sistema de RH</div>
+                    </div>
+                  </div>
+
+                  {/* Connector space + Sincroniza engine */}
+                  <div className="h-40 relative w-full flex items-center justify-center">
+                    <div className="absolute w-36 h-36 rounded-full animate-spin-slow" style={{ border:'1px dashed var(--border)', opacity:0.4 }}></div>
+                    <div className="absolute w-28 h-28 rounded-full animate-spin-slow-reverse" style={{ border:'1px solid var(--border)', borderTopColor:'transparent', opacity:0.6 }}></div>
+                    <div className="z-10 p-4 rounded-[1.3rem] flex items-center justify-center" style={{ backgroundColor:'var(--bg)', border:'2px solid var(--primary)', boxShadow:'0 0 30px color-mix(in srgb, var(--primary) 20%, transparent)' }}>
+                      <Logo height={40} className="logo-spin" decorative/>
+                    </div>
+                  </div>
+
+                  {/* Destinations */}
+                  <div className="flex justify-center gap-8 w-full">
+                    <div className="rounded-[0.75rem] p-5 flex flex-col items-center gap-3 w-40" style={{ backgroundColor:'var(--bg)', border:'1px solid var(--border)' }}>
+                      <Layers size={22} style={{ color:'var(--muted-fg)' }}/>
+                      <div className="text-sm font-semibold text-center" style={{ color:'var(--fg)' }}>Active Directory</div>
+                    </div>
+                    <div className="rounded-[0.75rem] p-5 flex flex-col items-center gap-3 w-40" style={{ backgroundColor:'var(--bg)', border:'1px solid var(--border)' }}>
+                      <Users size={22} style={{ color:'var(--muted-fg)' }}/>
+                      <div className="text-sm font-semibold text-center" style={{ color:'var(--fg)' }}>Entra ID</div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </FadeInSection>
+
+          </div>
+        </div>
+      </section>
+    );
+
+
+    // ─── Security ───
+    const SecuritySection = () => {
+      const items = [
+        { icon:<Lock/>, title:"Credenciais Criptografadas", desc:"Armazenamento seguro com criptografia para credenciais de AD, Entra ID e banco de dados." },
+        { icon:<EyeOff/>, title:"Controle de Dados", desc:"Defina exatamente quais campos do RH são sincronizados — exclua dados sensíveis por regra." },
+        { icon:<ClipboardList/>, title:"Trilha de Auditoria", desc:"Registro completo de todas as ações executadas, com contexto, timestamps e responsável." },
+        { icon:<Users/>, title:"Aprovação Humana", desc:"Ações de alto impacto ou volume passam por aprovação obrigatória antes da execução." },
+        { icon:<HeartPulse/>, title:"Health Check Contínuo", desc:"Monitoramento em tempo real da conectividade com AD, Entra ID e banco de dados." },
+        { icon:<RotateCcw/>, title:"Recuperação Automática", desc:"Em caso de falha, ações são reenfileiradas com backoff exponencial e notificação." }
+      ];
+      return (
+        <section id="seguranca" className="py-20 section-card-bg" style={{ backgroundColor:'var(--card)' }}>
+          <div className="max-w-screen-2xl mx-auto px-6 md:px-12">
+            <FadeInSection className="text-center max-w-2xl mx-auto mb-14">
+              <span className="font-medium tracking-wider text-sm uppercase mb-3 block" style={{ color:'var(--primary)', letterSpacing:'0.08em' }}>Segurança</span>
+              <h2 className="font-semibold text-4xl md:text-5xl mb-3" style={{ color:'var(--fg)' }}>Segurança, compliance e controle — desde a concepção</h2>
+              <p className="text-lg" style={{ color:'var(--card-fg)' }}>Confiança começa com práticas responsáveis de dados em toda a cadeia de identidade.</p>
+            </FadeInSection>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {items.map((item,i) => (
+                <FadeInSection key={i} delay={i*100}>
+                  <PremiumCard className="h-full p-8 flex flex-col items-start group cursor-default">
+                    <div className="mb-6 w-12 h-12 rounded-xl flex items-center justify-center card-transition group-hover:scale-110 group-hover:shadow-lg" style={{ backgroundColor:'var(--accent)', border:'1px solid var(--border)', color:'var(--primary)', transition:'transform 0.3s, box-shadow 0.3s' }}>
+                      {React.cloneElement(item.icon, { size:20, strokeWidth:1.5 })}
+                    </div>
+                    <h3 className="font-semibold text-lg mb-3" style={{ color:'var(--fg)' }}>{item.title}</h3>
+                    <p className="text-base leading-relaxed" style={{ color:'var(--muted-fg)' }}>{item.desc}</p>
+                  </PremiumCard>
+                </FadeInSection>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    };
+
+
+    // ─── Pricing ───
+    const PricingSection = () => (
+      <section id="precos" className="py-20" style={{ backgroundColor:'var(--bg)' }}>
+        <div className="max-w-screen-2xl mx-auto px-6 md:px-12">
+          <FadeInSection className="text-center mb-14 max-w-3xl mx-auto">
+            <span className="font-medium tracking-wider text-sm uppercase mb-3 block" style={{ color:'var(--primary)', letterSpacing:'0.08em' }}>Planos</span>
+            <h2 className="font-semibold text-4xl md:text-5xl mb-5" style={{ color:'var(--fg)' }}>Escolha o plano ideal para sua operação</h2>
+            <p className="text-lg" style={{ color:'var(--card-fg)' }}>O licenciamento do Sincroniza é desenhado para escalar com a sua empresa. Nossos valores são estruturados por <strong>tipo de plano</strong> e <strong>faixas de quantidade de usuários</strong>. Fornecemos propostas sob medida.</p>
+          </FadeInSection>
+          <FadeInSection delay={150}>
+            <div className="w-full overflow-x-auto rounded-[0.75rem] elevation-hero" style={{ border:'1px solid var(--border)', backgroundColor:'var(--card)' }}>
+              <table className="w-full text-left" style={{ borderCollapse:'collapse', minWidth:600 }}>
+                <thead>
+                  <tr style={{ backgroundColor:'var(--muted)' }}>
+                    <th className="p-5 font-semibold text-base" style={{ color:'var(--fg)', width:'50%', borderBottom:'1px solid var(--border)' }}>Funcionalidade</th>
+                    <th className="p-5 font-semibold text-base text-center" style={{ color:'var(--fg)', width:'25%', borderBottom:'1px solid var(--border)' }}>Standard</th>
+                    <th className="p-5 font-semibold text-base text-center" style={{ color:'var(--fg)', width:'25%', borderBottom:'1px solid var(--border)' }}>Premium</th>
+                  </tr>
+                </thead>
+                <tbody className="text-base" style={{ color:'var(--card-fg)' }}>
+                  {[
+                    { f:"Conector de Sistema de RH (Origem)", s:"1 Integrado", p:"1 Integrado" },
+                    { f:"Sincronização com AD e Entra ID", s:true, p:true },
+                    { f:"Provisionamento de Contas (Admissão)", s:true, p:true },
+                    { f:"Gestão de Desligamentos", s:"Básica", p:"Avançada" },
+                    { f:"Atualização Contínua de Dados Cadastrais", s:true, p:true },
+                    { f:"Monitoramento de Saúde (Health Check)", s:true, p:true },
+                    { f:"Gestão Dinâmica de Acessos (Grupos)", s:false, p:true },
+                    { f:"Atribuição de Licenças Microsoft 365", s:false, p:true },
+                    { f:"Mapeamento Avançado e Regras Customizadas", s:false, p:true },
+                    { f:"Governança e Fluxos de Aprovação", s:false, p:true },
+                    { f:"Notificações e Alertas", s:"Email", p:"Email + Teams" }
+                  ].map((row,i) => (
+                    <tr key={i} className="transition-colors duration-150" style={{ borderBottom:'1px solid var(--border)' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor='var(--accent)'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor='transparent'}>
+                      <td className="p-4 font-medium">{row.f}</td>
+                      <td className="p-4 text-center">{typeof row.s==='boolean' ? (row.s ? <Check size={16} style={{ color:'var(--primary)', margin:'0 auto' }}/> : <span style={{ color:'var(--muted-fg)' }}>—</span>) : row.s}</td>
+                      <td className="p-4 text-center">{typeof row.p==='boolean' ? (row.p ? <Check size={16} style={{ color:'var(--primary)', margin:'0 auto' }}/> : <span style={{ color:'var(--muted-fg)' }}>—</span>) : row.p}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </FadeInSection>
+        </div>
+      </section>
+    );
+
+
+    // ─── FAQ ───
+    const FAQSection = () => {
+      const faqs = [
+        { q:"O Sincroniza funciona com qualquer sistema de RH?", a:"Sim. O Sincroniza conecta via banco de dados (SQL Server, PostgreSQL, Oracle) com views customizadas. Sistemas como Benner e Senior são suportados nativamente." },
+        { q:"Preciso de AD Connect (Azure AD Connect) configurado?", a:"O Sincroniza detecta automaticamente a presença do AD Connect e ajusta o comportamento de sincronização para evitar conflitos. Em ambientes híbridos, as alterações são feitas no AD on-premises e o Sincroniza aguarda a propagação para o Entra ID." },
+        { q:"O que acontece se uma sincronização criar muitas ações?", a:"O sistema de aprovação inteligente detecta operações em massa e bloqueia a execução até aprovação humana. Limites configuráveis garantem que nenhuma ação em massa seja executada sem revisão." },
+        { q:"Como funciona o licenciamento?", a:"O licenciamento baseia-se no tipo de plano (Standard ou Premium) e faixas de usuários gerenciados. Como cada ambiente possui necessidades específicas, elaboramos preços sob medida. Entre em contato para uma cotação." },
+        { q:"Quanto tempo leva a implementação?", a:"A implementação típica leva de 2 a 4 semanas, incluindo configuração de conectores, mapeamento de campos, definição de regras e validação em homologação." },
+        { q:"Meus dados ficam seguros?", a:"O Sincroniza é implantado na infraestrutura do cliente (on-premises ou nuvem privada). Credenciais são criptografadas e todas as ações registradas em trilha de auditoria." }
+      ];
+      const [openIdx, setOpenIdx] = useState(0);
+
+      const handleToggle = (i) => setOpenIdx(openIdx===i ? -1 : i);
+
+      return (
+        <section className="py-20 section-card-bg" style={{ backgroundColor:'var(--card)' }}>
+          <div className="max-w-5xl mx-auto px-6 md:px-12">
+            <FadeInSection className="text-center mb-14">
+              <h2 className="font-semibold text-4xl md:text-5xl mb-3" style={{ color:'var(--fg)' }}>Perguntas frequentes</h2>
+              <p className="text-lg" style={{ color:'var(--card-fg)' }}>Não encontrou sua resposta? <a href="#contato" className="font-medium" style={{ color:'var(--primary)' }}>Fale conosco</a></p>
+            </FadeInSection>
+            <div className="flex flex-col gap-2" role="list">
+              {faqs.map((faq,i) => (
+                <FadeInSection key={i} delay={i*50}>
+                  <div role="listitem">
+                    <div className="rounded-lg overflow-hidden"
+                         style={{ border: openIdx===i ? '1px solid var(--input)' : '1px solid var(--border)', backgroundColor: openIdx===i ? 'var(--card)' : 'transparent' }}>
+                      <button
+                        type="button"
+                        className="w-full py-5 px-6 flex justify-between items-center cursor-pointer text-left"
+                        style={{ backgroundColor:'transparent', border:'none', fontFamily:'Open Sans, sans-serif' }}
+                        id={`faq-trigger-${i}`}
+                        aria-expanded={openIdx===i}
+                        aria-controls={`faq-panel-${i}`}
+                        onClick={() => handleToggle(i)}
+                        onMouseEnter={e => { if(openIdx!==i) e.currentTarget.parentElement.style.backgroundColor='var(--accent)'; }}
+                        onMouseLeave={e => { if(openIdx!==i) e.currentTarget.parentElement.style.backgroundColor='transparent'; }}>
+                        <h4 className="font-medium text-xl" style={{ color: openIdx===i ? 'var(--primary)' : 'var(--fg)' }}>{faq.q}</h4>
+                        <ChevronDown size={18} style={{ color:'var(--muted-fg)', transform: openIdx===i ? 'rotate(180deg)' : 'rotate(0)', transition:'transform 0.2s', flexShrink:0, marginLeft:16 }}/>
+                      </button>
+                      <div className={`accordion-content ${openIdx===i ? 'open' : ''}`}
+                           id={`faq-panel-${i}`}
+                           role="region"
+                           aria-labelledby={`faq-trigger-${i}`}>
+                        <p className="text-base leading-relaxed pb-5 px-5 pr-10" style={{ color:'var(--muted-fg)' }}>{faq.a}</p>
+                      </div>
+                    </div>
+                  </div>
+                </FadeInSection>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    };
+
+
+    // ─── Contact ───
+    const ContactSection = () => {
+      const [submitting, setSubmitting] = useState(false);
+      const [submitted, setSubmitted] = useState(false);
+      const [error, setError] = useState(null);
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        setError(null);
+        const form = e.target;
+        const data = {
+          'given-name': form['given-name'].value,
+          'family-name': form['family-name'].value,
+          'email': form['email'].value,
+          'organization': form['organization'].value,
+          'organization-title': form['organization-title'].value,
+          'employee-count': form['employee-count'].value,
+          'message': form['message'].value || '',
+        };
+        try {
+          const res = await fetch('https://default495a6f2fe0214750b7459b42828422.06.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/03b905e6273b4d25b35a2042a14bf1da/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gB5i3lShINNS0hayl-6IUMfxI09piq53ikUlz5PFbR4', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          });
+          if (!res.ok) throw new Error('Erro ao enviar');
+          setSubmitted(true);
+        } catch (err) {
+          setError('Não foi possível enviar sua mensagem. Tente novamente ou entre em contato por email.');
+        } finally {
+          setSubmitting(false);
+        }
+      };
+      const inputStyle = { backgroundColor:'var(--muted)', border:'1px solid var(--border)', borderRadius:8, padding:'12px 14px', color:'var(--fg)', fontSize:15, outline:'none', transition:'border-color 0.15s', fontFamily:'Barlow, sans-serif' };
+
+      return (
+        <section id="contato" className="py-20" style={{ backgroundColor:'var(--bg)' }}>
+          <div className="max-w-screen-2xl mx-auto px-6 md:px-12 grid lg:grid-cols-2 gap-14 items-start">
+            <FadeInSection>
+              <span className="font-medium tracking-wider text-sm uppercase mb-3 block" style={{ color:'var(--primary)', letterSpacing:'0.08em' }}>Contato</span>
+              <h2 className="font-semibold text-4xl md:text-5xl leading-tight mb-8" style={{ color:'var(--fg)' }}>Automatize a gestão de identidades da sua empresa</h2>
+              <ul className="mt-10 flex flex-col gap-5">
+                {[
+                  { t:"Demonstração do produto", d:"Conheça os recursos do Sincroniza em nosso ambiente de demonstração" },
+                  { t:"Análise de aderência", d:"Avaliamos a compatibilidade com seu ambiente de AD/Entra ID" },
+                  { t:"Proposta sob medida", d:"Plano e precificação adaptados ao seu volume de funcionários" },
+                  { t:"Suporte na implementação", d:"Acompanhamento completo do setup até a operação" }
+                ].map((item,i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <div className="mt-0.5 w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ backgroundColor:'var(--accent)' }}><Check size={12} style={{ color:'var(--primary)' }}/></div>
+                    <div>
+                      <h4 className="font-semibold text-lg" style={{ color:'var(--fg)' }}>{item.t}</h4>
+                      <p className="text-base mt-0.5" style={{ color:'var(--muted-fg)' }}>{item.d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </FadeInSection>
+            <FadeInSection delay={150}>
+              <div className="rounded-[1.3rem] p-7 md:p-9" style={{ backgroundColor:'var(--card)', border:'2px solid var(--primary)', boxShadow:'0 0 50px color-mix(in srgb, var(--primary) 20%, transparent), 0 20px 60px rgba(0,0,0,0.4)' }}>
+                {submitted ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor:'var(--accent)' }}>
+                      <Check size={28} style={{ color:'#10B981' }}/>
+                    </div>
+                    <h3 className="font-semibold text-xl" style={{ color:'var(--fg)' }}>Mensagem enviada!</h3>
+                    <p className="text-sm max-w-xs" style={{ color:'var(--muted-fg)' }}>Obrigado pelo seu interesse. Nossa equipe entrará em contato em até 24 horas.</p>
+                    <button type="button" className="btn-secondary px-6 py-2 rounded-lg text-sm mt-2" onClick={() => setSubmitted(false)}>Enviar outra mensagem</button>
+                  </div>
+                ) : (
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="contact-given-name" className="text-xs font-medium" style={{ color:'var(--muted-fg)' }}>Nome*</label>
+                      <input id="contact-given-name" name="given-name" autoComplete="given-name" type="text" placeholder="João" required style={inputStyle} onFocus={e => e.target.style.borderColor='var(--ring)'} onBlur={e => e.target.style.borderColor='var(--border)'}/>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="contact-family-name" className="text-xs font-medium" style={{ color:'var(--muted-fg)' }}>Sobrenome*</label>
+                      <input id="contact-family-name" name="family-name" autoComplete="family-name" type="text" placeholder="Silva" required style={inputStyle} onFocus={e => e.target.style.borderColor='var(--ring)'} onBlur={e => e.target.style.borderColor='var(--border)'}/>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="contact-email" className="text-xs font-medium" style={{ color:'var(--muted-fg)' }}>Email corporativo*</label>
+                    <input id="contact-email" name="email" autoComplete="email" type="email" placeholder="seu@email.com.br" required spellCheck={false} style={inputStyle} onFocus={e => e.target.style.borderColor='var(--ring)'} onBlur={e => e.target.style.borderColor='var(--border)'}/>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="contact-organization" className="text-xs font-medium" style={{ color:'var(--muted-fg)' }}>Empresa*</label>
+                      <input id="contact-organization" name="organization" autoComplete="organization" type="text" placeholder="Sua Empresa Ltda." required style={inputStyle} onFocus={e => e.target.style.borderColor='var(--ring)'} onBlur={e => e.target.style.borderColor='var(--border)'}/>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="contact-title" className="text-xs font-medium" style={{ color:'var(--muted-fg)' }}>Cargo*</label>
+                      <input id="contact-title" name="organization-title" autoComplete="organization-title" type="text" placeholder="Gerente de TI" required style={inputStyle} onFocus={e => e.target.style.borderColor='var(--ring)'} onBlur={e => e.target.style.borderColor='var(--border)'}/>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="contact-employees" className="text-xs font-medium" style={{ color:'var(--muted-fg)' }}>Número de funcionários*</label>
+                    <select id="contact-employees" name="employee-count" autoComplete="off" required style={{ ...inputStyle, appearance:'none', cursor:'pointer', backgroundColor:'var(--muted)', color:'var(--fg)', backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7688' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat:'no-repeat', backgroundPosition:'right 14px center' }} onFocus={e => e.target.style.borderColor='var(--ring)'} onBlur={e => e.target.style.borderColor='var(--border)'}>
+                      <option value="" disabled selected>Selecione</option>
+                      <option value="500">Menos de 500</option>
+                      <option value="2000">500 a 2.000</option>
+                      <option value="5000">2.000 a 5.000</option>
+                      <option value="5001">Mais de 5.000</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="contact-message" className="text-xs font-medium" style={{ color:'var(--muted-fg)' }}>Mensagem (opcional)</label>
+                    <textarea id="contact-message" name="message" autoComplete="off" rows="3" placeholder="Como podemos ajudar…" style={{ ...inputStyle, resize:'none' }} onFocus={e => e.target.style.borderColor='var(--ring)'} onBlur={e => e.target.style.borderColor='var(--border)'}></textarea>
+                  </div>
+                  {error && <p className="text-sm py-2 px-3 rounded-lg" style={{ color:'var(--destructive)', backgroundColor:'oklch(0.6188 0.2376 25.77 / 0.1)' }}>{error}</p>}
+                  <button type="submit" disabled={submitting} className="btn-primary w-full py-3.5 rounded-[0.75rem] mt-3 text-sm font-medium flex items-center justify-center gap-2">
+                    {submitting ? (
+                      <React.Fragment>
+                        <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeDashoffset="20" strokeLinecap="round"/>
+                        </svg>
+                        Enviando…
+                      </React.Fragment>
+                    ) : 'Solicitar Demonstração'}
+                  </button>
+                  <p className="text-center mt-1.5" style={{ fontSize:11, color:'var(--muted-fg)' }}>Ao enviar, você concorda com nossa <a href="#" style={{ color:'var(--primary)', textDecoration:'underline' }}>Política de Privacidade</a>.</p>
+                </form>
+                )}
+              </div>
+            </FadeInSection>
+          </div>
+        </section>
+      );
+    };
+
+
+    // ─── Footer ───
+    const Footer = () => (
+      <footer style={{ backgroundColor:'var(--card)' }}>
+        <div className="w-full h-px" style={{ background:'linear-gradient(to right, transparent, var(--border), transparent)' }}></div>
+        <div className="max-w-screen-2xl mx-auto px-6 md:px-12 py-10 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex flex-col items-center md:items-start gap-1.5">
+            <div className="flex items-center gap-2">
+              <Logo height={28}/>
+              <span className="tracking-wide text-xl" style={{ color:'var(--logo-text)', letterSpacing:'0.06em', fontFamily:"'Pattanakarn', sans-serif", fontWeight:600 }}>sincroniza</span>
+            </div>
+            <p className="text-sm" style={{ color:'var(--muted-fg)' }}>IP5 Tecnologia • Blumenau, SC — Brasil</p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-8 text-base">
+            {[{name:'Produto',href:'#como-funciona'},{name:'Funcionalidades',href:'#funcionalidades'},{name:'Segurança',href:'#seguranca'},{name:'Preços',href:'#precos'}].map(l => (
+              <a key={l.name} href={l.href} className="transition-colors duration-150" style={{ color:'var(--muted-fg)' }}
+                 onMouseEnter={e => e.target.style.color='var(--fg)'}
+                 onMouseLeave={e => e.target.style.color='var(--muted-fg)'}>{l.name}</a>
+            ))}
+          </div>
+          <div className="text-sm" style={{ color:'var(--muted-fg)' }}>© 2026 IP5 Tecnologia</div>
+        </div>
+      </footer>
+    );
+
+
+    // ─── Mount ───
+    function App() {
+      return (
+        <div className="min-h-screen">
+          <a href="#main-content" className="skip-link">Pular para o conteúdo principal</a>
+          <Navbar/>
+          <main id="main-content">
+            <Hero/>
+            <WorkflowSection/>
+            <FeatureGrid/>
+            <ImpactSection/>
+            <ArchitectureSection/>
+            <SecuritySection/>
+            <PricingSection/>
+            <FAQSection/>
+            <ContactSection/>
+          </main>
+          <Footer/>
+        </div>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<ThemeProvider><App/></ThemeProvider>);
+  </script>
+</body>
+</html>
